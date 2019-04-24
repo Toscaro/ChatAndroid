@@ -38,6 +38,7 @@ public class LoginActivity extends AppCompatActivity implements Runnable, Serial
         nomeDeUsuario = findViewById(R.id.nome_de_usuario_edt);
         informarConexao = findViewById(R.id.informar_conexao_txt);
         conectarButton = findViewById(R.id.conectar_btn);
+        
 
         conectarButton.setOnClickListener(buttonClickListener);
     }
