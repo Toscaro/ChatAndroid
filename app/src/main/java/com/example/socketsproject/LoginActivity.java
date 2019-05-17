@@ -2,27 +2,25 @@ package com.example.socketsproject;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.example.socketsproject.utils.Constants;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
+import java.io.PrintStream;
 import java.net.Socket;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.ContextCompat;
+public class LoginActivity extends AppCompatActivity implements Runnable {
 
-public class LoginActivity extends AppCompatActivity implements Runnable, Serializable {
+    private final String TAG = this.getClass().getSimpleName();
 
     private EditText nomeDaPessoa;
-    private EditText nomeDeUsuario;
     private TextView informarConexao;
     private Button conectarButton;
     private Context mContext;
@@ -35,7 +33,6 @@ public class LoginActivity extends AppCompatActivity implements Runnable, Serial
         mContext = getApplicationContext();
 
         nomeDaPessoa = findViewById(R.id.nome_da_pessoa_edt);
-        nomeDeUsuario = findViewById(R.id.nome_de_usuario_edt);
         informarConexao = findViewById(R.id.informar_conexao_txt);
         conectarButton = findViewById(R.id.conectar_btn);
 
@@ -45,42 +42,33 @@ public class LoginActivity extends AppCompatActivity implements Runnable, Serial
     private View.OnClickListener buttonClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-
-            Thread thread = new Thread(LoginActivity.this);
-            thread.start();
+            new Thread(LoginActivity.this).start();
         }
     };
 
     @Override
     public void run() {
+        informarConexao.setTextColor(mContext.getColor(R.color.colorBlack));
+        informarConexao.setText("Conectado com o servidor, aguardando...");
 
         try {
             Socket socket = new Socket(Constants.IPV4, Constants.PORT_NUMBER);
+            Log.d(TAG, "run: socket conectado: " + socket.toString());
 
-            informarConexao.setTextColor(ContextCompat.getColor(mContext, R.color.colorBlack));
-            informarConexao.setText("Conectado com o servidor, aguardando...");
+            new Thread(new ReceptorMensagens(socket.getInputStream())).start();
 
-            String nome = nomeDaPessoa.getText().toString();
-            String nick = nomeDeUsuario.getText().toString();
+            Log.d(TAG, "run: printStream");
+            PrintStream printStream = new PrintStream(socket.getOutputStream());
+            printStream.println(nomeDaPessoa.getText());
 
-            Usuario usuario = new Usuario(nome, nick);
-
-            ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
-            outputStream.writeObject(usuario);
-
-            BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            Boolean isUsernameFree = Boolean.valueOf(reader.readLine());
-
-            if (isUsernameFree) {
-                informarConexao.setText("AEOH");
-            } else {
-                informarConexao.setText("Usuario ja utilizado, por favor, tente novamente");
-            }
+            Log.d(TAG, "run: close");
+            printStream.close();
+            socket.close();
 
         } catch (IOException e) {
-            informarConexao.setTextColor(ContextCompat.getColor(mContext, R.color.colorRed));
-            informarConexao.setText("Problema com o servidor, por favor, tente novamente.");
             e.printStackTrace();
+            informarConexao.setTextColor(mContext.getColor(R.color.colorRed));
+            informarConexao.setText("Problema com o servidor, por favor, tente novamente.");
         }
     }
 }
