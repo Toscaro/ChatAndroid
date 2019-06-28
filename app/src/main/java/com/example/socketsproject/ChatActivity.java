@@ -5,6 +5,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.util.JsonReader;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -14,13 +16,14 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
 
 public class ChatActivity extends AppCompatActivity implements Runnable{
 
-    private Socket mSocket;
     private String mNomeUsuario;
+    private static final String TAG = ChatActivity.class.getSimpleName();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,30 +31,33 @@ public class ChatActivity extends AppCompatActivity implements Runnable{
         setContentView(R.layout.activity_chat);
     }
 
-    public void teste(View view) {
-        new Thread(ChatActivity.this).start();
-
-    }
-
     public void testee(View view) {
 
-        try {
-                new PrintWriter(mSocket.getOutputStream()).println(new JSONObject()
-                                .put("type", "mensagem")
-                                .put("mensagem", "Ola mundo!!!"));
-        } catch (Exception e) {
-            e.printStackTrace();
-
+        Thread thisThread = new Thread(this);
+        if (!thisThread.isAlive()) {
+            thisThread.start();
         }
     }
 
     @Override
     public void run() {
         try {
-            mSocket = new Socket(Constants.IPV4, Constants.PORT_NUMBER);
+            Socket socket = SocketApplication.getSocket();
+            PrintWriter printWriter = new PrintWriter(socket.getOutputStream());
 
-        } catch (IOException e) {
+            Log.d(TAG, "run: Criando mensagem: ");
+
+            JSONObject object = new JSONObject();
+
+            object.put("type", "mensagem");
+            object.put("mensagem", "HelloWorld!");
+
+            printWriter.println(object.toString());
+
+        } catch (Exception e) {
+            Log.d(TAG, "run: EXCEPTION: " + e);
             e.printStackTrace();
+
         }
     }
 }

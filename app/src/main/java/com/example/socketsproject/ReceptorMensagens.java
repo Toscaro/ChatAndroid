@@ -9,18 +9,28 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.Socket;
 
 public class ReceptorMensagens implements Runnable {
 
     private final String TAG = getClass().getSimpleName();
-    private final Socket mSocket;
 
     private final InputStream mInputStream;
     private OnLoginReceived mTest;
 
-    ReceptorMensagens(Socket socket, InputStream inputStream) {
-        this.mSocket = socket;
+    private static volatile ReceptorMensagens mReceptorMensagensInstance;
+
+    public static ReceptorMensagens getInstance() {
+
+        if (mReceptorMensagensInstance == null) {
+            try {
+                mReceptorMensagensInstance = new ReceptorMensagens(SocketApplication.getSocket().getInputStream());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return mReceptorMensagensInstance;
+    }
+    ReceptorMensagens(InputStream inputStream) {
         this.mInputStream = inputStream;
 
     }
@@ -70,6 +80,9 @@ public class ReceptorMensagens implements Runnable {
         if (type.equals("login")) {
             boolean deveConectar = jsonObject.optBoolean("login");
             mTest.onLoginReceived(deveConectar);
+
+        } else if (type.equals("mensagem")){
+            Log.d(TAG, "receptorDeJson: NOVA MENSAGEM!!");
         }
 
     }
